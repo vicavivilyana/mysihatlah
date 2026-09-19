@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background-color: #f5f6fa;
+  color: #1a1f36;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe-area helpers use MARGIN so they compose with padding utilities
+   (padding-top here would silently override a `pt-*` class). */
+.safe-top { margin-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+@layer components {
+  /* ---- Typography ---- */
+  .wordmark { @apply font-serif font-bold tracking-tight text-navy; }
+  .h-display { @apply font-serif text-[28px] leading-tight font-bold text-navy; }
+  .h-section { @apply font-serif text-xl font-bold text-navy; }
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted; }
+
+  /* ---- Buttons: 44px+ tap targets, one accent per screen ---- */
+  .btn-base {
+    @apply flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-5
+           text-[15px] font-semibold transition duration-200 ease-soft
+           active:scale-[0.985] disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-primary { @apply btn-base bg-navy text-white shadow-card hover:bg-navy-soft; }
+  .btn-gold    { @apply btn-base bg-gold text-navy-deep shadow-card hover:bg-gold-light; }
+  .btn-ghost   { @apply btn-base border border-hairline bg-white text-navy hover:bg-sand; }
+  .btn-quiet   { @apply btn-base text-ink-muted hover:text-navy; }
+
+  /* ---- Surfaces ---- */
+  .card { @apply rounded-card border border-hairline bg-white p-5 shadow-card; }
+  .card-flat { @apply rounded-card border border-hairline bg-white p-5; }
+
+  /* ---- Forms ---- */
+  .field-label { @apply mb-2 block text-sm font-semibold text-ink; }
+  .field-input {
+    @apply min-h-[52px] w-full rounded-2xl border border-hairline bg-white px-4 text-[15px]
+           text-ink outline-none transition duration-200 ease-soft
+           placeholder:text-ink-muted/60 focus:border-navy focus:ring-4 focus:ring-navy/10;
+  }
+
+  /* ---- Bits ---- */
+  .chip { @apply inline-flex items-center gap-1.5 rounded-pill bg-navy/5 px-3 py-1 text-xs font-semibold text-navy; }
+  .chip-gold { @apply inline-flex items-center gap-1.5 rounded-pill bg-gold-wash px-3 py-1 text-xs font-semibold text-gold; }
+  .hairline-t { @apply border-t border-hairline; }
+
+  /* ---- Frosted bottom tab bar ---- */
+  .tabbar {
+    @apply border-t border-hairline shadow-tab;
+    background-color: rgba(255, 255, 255, 0.82);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

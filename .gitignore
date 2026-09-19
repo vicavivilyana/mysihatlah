@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+
+# Env — never commit real values. Only the *.example templates are tracked.
+.env
+.env.*
+!.env.example
+.env.local
+supabase/.env
+supabase/functions/.env
+
+# Supabase local artifacts
+supabase/.branches/
+supabase/.temp/
+supabase/snippets/
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

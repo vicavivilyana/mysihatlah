@@ -1,0 +1,46 @@
+{
+  "name": "healthgo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "HealthGo — mobile-first health app for Malaysian hospitals (PWA, Capacitor-ready)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "tsc -b --noEmit",
+    "setup:local": "node scripts/setup-local.mjs",
+    "sb:start": "node scripts/sb.mjs start",
+    "sb:stop": "node scripts/sb.mjs stop",
+    "sb:reset": "node scripts/sb.mjs db reset",
+    "sb:functions": "node scripts/sb.mjs functions serve",
+    "sb:test": "node scripts/sb.mjs test db",
+    "smoke": "bash scripts/smoke.sh"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "@vis.gl/react-google-maps": "^1.1.0",
+    "i18next": "^23.15.1",
+    "i18next-browser-languagedetector": "^8.0.0",
+    "lucide-react": "^0.441.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.0.2",
+    "react-router-dom": "^6.26.2",
+    "tesseract.js": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.3",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "supabase": "2.117.0",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.6",
+    "vite-plugin-pwa": "^0.20.5"
+  }
+}
