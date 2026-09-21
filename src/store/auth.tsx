@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase, invokeFunction } from '@/lib/supabase';
+import { PREVIEW_MODE, PREVIEW_GUEST } from '@/lib/previewMode';
 
 export interface Profile {
   id: string;
@@ -14,6 +15,8 @@ interface AuthState {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  /** True only under the VITE_SKIP_AUTH UI-preview bypass (no real session). */
+  isPreview: boolean;
   refreshProfile: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -57,18 +60,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Preview bypass: a clearly-fake local identity so screens can render. There
+  // is deliberately NO session, so every backend call still fails as normal.
+  const isPreview = PREVIEW_MODE && !session;
+
   const value = useMemo<AuthState>(
     () => ({
       session,
-      profile,
+      profile: isPreview ? (PREVIEW_GUEST as unknown as Profile) : profile,
       loading,
+      isPreview,
       refreshProfile: () => loadProfile(session),
       logout: async () => {
         await supabase.auth.signOut();
         setProfile(null);
       },
     }),
-    [session, profile, loading],
+    [session, profile, loading, isPreview],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

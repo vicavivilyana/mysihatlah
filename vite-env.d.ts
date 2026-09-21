@@ -12,6 +12,7 @@ interface ImportMetaEnv {
   readonly VITE_QR_URL_BASE?: string;
   readonly VITE_DEFAULT_MACHINE_ID?: string;
   readonly VITE_DEV_AUTOLOGIN?: string;
+  readonly VITE_SKIP_AUTH?: string;
 }
 
 interface ImportMeta {

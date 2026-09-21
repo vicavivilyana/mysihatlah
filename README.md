@@ -173,6 +173,23 @@ so it reflects the backend, not the build).
 > before any real user touches the app. It is `false` by default and is never a
 > `VITE_` variable, so it can't be switched on from the client.
 
+### Testing shortcuts (both OFF by default — never enable in production)
+
+Two independent dev flags exist. Keep both `false` for anything real.
+
+| Flag | What it does | Creates a session? |
+|---|---|---|
+| `VITE_SKIP_AUTH` | **UI preview.** Skips the login redirect and renders the app with a clearly-fake local "guest" identity and a permanent red **"PREVIEW — not logged in"** banner. Handy for viewing the UI on a phone. | **No.** Nothing is faked beyond the local identity — every feature that needs a real session shows its normal empty/error state. |
+| `VITE_DEV_AUTOLOGIN` | Silently signs in a fixed demo user through the existing mock-OTP flow, so features actually work end to end. Requires `OTP_PROVIDER=mock`. | Yes — a real Supabase session. |
+
+If both are set, `VITE_SKIP_AUTH` wins and no session is created.
+
+Neither changes the real auth flow, the route guards, or RLS: with both `false`
+the app behaves exactly as it does in production. To remove the preview bypass
+entirely, delete `src/lib/previewMode.ts`, `src/components/PreviewBanner.tsx`,
+their imports in `src/App.tsx`, `src/store/auth.tsx` and `src/main.tsx`, and the
+`body.preview-mode` rule in `src/index.css`.
+
 ### Going live later
 Set `OTP_PROVIDER=twilio` + `TWILIO_*` secrets (real SMS; per-message cost),
 replace the mock in `ALLOWED_ORIGINS` with only production domains, host the
@@ -190,6 +207,8 @@ final Privacy Policy and name a DPO (see [SECURITY.md](SECURITY.md)).
 | client | `VITE_QR_PAYLOAD_MODE` | Format of the kit QR: `json` (default), `token`, or `url` |
 | client | `VITE_QR_URL_BASE` | Base URL for `url` mode (defaults to the app origin) |
 | client | `VITE_DEFAULT_MACHINE_ID` | Dispenser a claim draws stock from (default `HG-TEST-000`) |
+| client | `VITE_SKIP_AUTH` | **Testing only.** `true` = skip login, render a no-session UI preview. Default `false` |
+| client | `VITE_DEV_AUTOLOGIN` | **Testing only.** `true` = auto sign-in as a demo user. Default `false` |
 | functions | `FIELD_ENCRYPTION_KEY` | AES-256-GCM key (32 bytes base64) |
 | functions | `OTP_PEPPER` | HMAC pepper for OTP hashes |
 | functions | `DISPENSER_SHARED_SECRET` | `x-dispenser-secret` for the hardware |

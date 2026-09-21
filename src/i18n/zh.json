@@ -288,5 +288,8 @@
     "left": "剩 {{n}}",
     "deleteConfirm": "移除此药品？",
     "noDosesToday": "今天没有安排服药。"
+  },
+  "preview": {
+    "banner": "预览模式 — 未登录"
   }
 }

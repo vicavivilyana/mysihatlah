@@ -288,5 +288,8 @@
     "left": "{{n}} left",
     "deleteConfirm": "Remove this medicine?",
     "noDosesToday": "No doses scheduled today."
+  },
+  "preview": {
+    "banner": "Preview — not logged in"
   }
 }

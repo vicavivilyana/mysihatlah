@@ -49,6 +49,12 @@ export default defineConfig({
       },
     }),
   ],
+  // Honour an assigned PORT (the preview tool picks a free one); falls back to
+  // Vite's default for a plain `npm run dev`.
+  server: {
+    port: Number(process.env.PORT) || 5173,
+    strictPort: Boolean(process.env.PORT),
+  },
   build: {
     target: 'es2021',
     sourcemap: false,

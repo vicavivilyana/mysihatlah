@@ -8,6 +8,8 @@ import TabLayout from './components/TabLayout';
 import Splash from './components/Splash';
 import DemoBadge from './components/DemoBadge';
 import { DEV_AUTOLOGIN, devAutoLogin } from './lib/devAuth';
+import { PREVIEW_MODE } from './lib/previewMode';
+import PreviewBanner from './components/PreviewBanner';
 
 // Heavy screens (OCR / Maps / QR libs) are code-split so the initial app
 // shell stays small and installs/loads fast on mobile.
@@ -28,8 +30,8 @@ export default function App() {
   useEffect(() => {
     // Retry once if the session is dropped (e.g. a stale token was signed out),
     // but cap attempts so a persistent failure can't loop.
-    if (!DEV_AUTOLOGIN || loading || session || attempts.current >= 2) {
-      if (!DEV_AUTOLOGIN) setAutoLoggingIn(false);
+    if (PREVIEW_MODE || !DEV_AUTOLOGIN || loading || session || attempts.current >= 2) {
+      if (PREVIEW_MODE || !DEV_AUTOLOGIN) setAutoLoggingIn(false);
       return;
     }
     attempts.current += 1;
@@ -47,10 +49,14 @@ export default function App() {
   // the auth flow), so it is never absent from a demo build.
   return (
     <>
+      <PreviewBanner />
       <DemoBadge />
       {loading || (autoLoggingIn && !autoLoginFailed && !session) ? (
         <Splash />
-      ) : session ? (
+      ) : session || PREVIEW_MODE ? (
+        // PREVIEW_MODE renders the app shell WITHOUT a session. Nothing is
+        // faked beyond a local guest identity — anything needing a real
+        // session fails normally and each screen shows its own empty/error UI.
         <AuthedRoutes />
       ) : (
         <GuestRoutes />

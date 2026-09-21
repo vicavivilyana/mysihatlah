@@ -64,6 +64,10 @@ body {
   }
 }
 
+/* VITE_SKIP_AUTH preview bypass: reserve space so the fixed banner never
+   covers content. Remove along with src/lib/previewMode.ts. */
+body.preview-mode { padding-top: 36px; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

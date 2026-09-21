@@ -288,5 +288,8 @@
     "left": "tinggal {{n}}",
     "deleteConfirm": "Buang ubat ini?",
     "noDosesToday": "Tiada dos dijadualkan hari ini."
+  },
+  "preview": {
+    "banner": "Pratonton — belum log masuk"
   }
 }
