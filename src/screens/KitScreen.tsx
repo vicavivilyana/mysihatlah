@@ -8,8 +8,11 @@ import ReleaseQr from '@/features/kit/ReleaseQr';
 import {
   claimKit,
   getClaimStatus,
+  getMyClaim,
   reissueReleaseToken,
-  type ClaimKitResult,
+  viewFromClaimResult,
+  viewFromRow,
+  type ReleaseView,
   type SurveyAnswers,
 } from '@/features/kit/api';
 import { functionErrorKey, isReason } from '@/lib/supabase';
@@ -31,7 +34,7 @@ export default function KitScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('checking');
-  const [claim, setClaim] = useState<ClaimKitResult | null>(null);
+  const [claim, setClaim] = useState<ReleaseView | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,23 +46,34 @@ export default function KitScreen() {
     let active = true;
     (async () => {
       try {
-        const status = await getClaimStatus();
+        const row = await getMyClaim();
         if (!active) return;
-        if (status === 'released') {
-          setStep('dispensed');
-        } else if (status === 'pending' || status === 'expired') {
-          // Kit already allocated but never dispensed — re-show a fresh QR.
-          try {
-            const res = await reissueReleaseToken();
-            if (!active) return;
-            setClaim(res);
-            setStep('qr');
-          } catch (e) {
-            if (!active) return;
-            setStep(isReason(e, 'already_claimed') ? 'dispensed' : 'claimed');
-          }
-        } else {
+        if (!row) {
           setStep('survey');
+        } else if (row.status === 'released') {
+          setStep('dispensed');
+        } else {
+          // Kit allocated but not dispensed. Re-display the EXISTING token if it
+          // is still valid — opening this tab must not rotate the token (that
+          // both invalidated the shown QR and wrote an audit row every visit).
+          const view = viewFromRow(row);
+          if (view) {
+            // Valid or expired — ReleaseQr renders the countdown or its expired
+            // state, where the user can explicitly request a new code.
+            setClaim(view);
+            setStep('qr');
+          } else {
+            // No token on the row at all: nothing to re-display, so mint one.
+            try {
+              const res = await reissueReleaseToken();
+              if (!active) return;
+              setClaim(viewFromClaimResult(res));
+              setStep('qr');
+            } catch (e) {
+              if (!active) return;
+              setStep(isReason(e, 'already_claimed') ? 'dispensed' : 'claimed');
+            }
+          }
         }
       } catch {
         // Can't read status — let the server be the source of truth.
@@ -90,7 +104,7 @@ export default function KitScreen() {
     setSubmitting(true);
     try {
       const res = await claimKit(answers);
-      setClaim(res);
+      setClaim(viewFromClaimResult(res));
       setStep('qr');
     } catch (e) {
       if (isReason(e, 'already_claimed')) setStep('dispensed');
@@ -105,7 +119,7 @@ export default function KitScreen() {
     setRegenerating(true);
     try {
       const res = await reissueReleaseToken();
-      setClaim(res);
+      setClaim(viewFromClaimResult(res));
     } catch (e) {
       // Already dispensed in the meantime → show the success state instead.
       if (isReason(e, 'already_claimed')) setStep('dispensed');
@@ -117,18 +131,17 @@ export default function KitScreen() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-sand">
-      <ScreenHeader title={t('kit.title')} />
+      {step !== 'survey' && <ScreenHeader title={t('kit.title')} />}
 
       {step === 'checking' && (
         <div className="flex flex-1 items-center justify-center p-10 text-ink-muted">{t('common.loading')}</div>
       )}
 
       {step === 'survey' && (
-        <div className="px-5 py-6">
-          <p className="mb-5 text-ink-muted">{t('kit.surveyIntro')}</p>
-          {error && <p className="mb-4 text-sm font-medium text-red">{error}</p>}
+        <>
+          {error && <p className="px-5 pt-4 text-sm font-semibold text-red">{error}</p>}
           <SurveyForm onSubmit={handleSurvey} submitting={submitting} />
-        </div>
+        </>
       )}
 
       {step === 'qr' && claim && (

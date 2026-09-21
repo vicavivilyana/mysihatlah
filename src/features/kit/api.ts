@@ -34,16 +34,72 @@ export type ClaimStatus = 'none' | 'pending' | 'released' | 'expired';
  */
 export const DEFAULT_MACHINE_ID = import.meta.env.VITE_DEFAULT_MACHINE_ID?.trim() || 'HG-TEST-000';
 
+/** The caller's own claim row (RLS scopes this to their own row only). */
+export interface KitClaimRow {
+  status: ClaimStatus;
+  release_token: string | null;
+  token_expires_at: string | null;
+  hospital_id: string | null;
+  machine_id: string | null;
+}
+
 /**
- * The caller's own claim, read under RLS (a user can only ever see their own
- * row). This doubles as the redemption poll: once the machine redeems the
- * token, dispenser-release sets status='released'.
+ * Read the caller's claim. Returning the token as well as the status means the
+ * app can RE-DISPLAY an existing, still-valid QR instead of minting a new one
+ * every time the Kit tab is opened (which rotated the token and wrote an audit
+ * row on each visit).
  */
-export async function getClaimStatus(): Promise<ClaimStatus> {
-  const { data, error } = await supabase.from('kit_claims').select('status').maybeSingle();
+export async function getMyClaim(): Promise<KitClaimRow | null> {
+  const { data, error } = await supabase
+    .from('kit_claims')
+    .select('status, release_token, token_expires_at, hospital_id, machine_id')
+    .maybeSingle();
   if (error) throw error;
-  if (!data) return 'none';
-  return (data.status as ClaimStatus) ?? 'none';
+  return (data as KitClaimRow) ?? null;
+}
+
+/** Status-only convenience (used by Home and the redemption poll). */
+export async function getClaimStatus(): Promise<ClaimStatus> {
+  const claim = await getMyClaim();
+  return claim?.status ?? 'none';
+}
+
+/** Normalised shape the QR screen renders, from either source. */
+export interface ReleaseView {
+  token: string;
+  tokenExpiresAt: string;
+  issuedAt: string;
+  hospitalId: string;
+  machineId: string;
+  hospitalName?: string;
+  locationName?: string;
+}
+
+export const TOKEN_TTL_MS = 5 * 60 * 1000; // matches claim-kit's TOKEN_TTL_SECONDS
+
+export function viewFromClaimResult(r: ClaimKitResult): ReleaseView {
+  return {
+    token: r.release_token,
+    tokenExpiresAt: r.token_expires_at,
+    issuedAt: r.issued_at,
+    hospitalId: r.machine.hospital_id,
+    machineId: r.machine.machine_id,
+    hospitalName: r.machine.hospital_name,
+    locationName: r.machine.location_name,
+  };
+}
+
+export function viewFromRow(row: KitClaimRow): ReleaseView | null {
+  if (!row.release_token || !row.token_expires_at) return null;
+  // issued_at isn't stored; derive it from the expiry so the payload stays complete.
+  const issued = new Date(new Date(row.token_expires_at).getTime() - TOKEN_TTL_MS).toISOString();
+  return {
+    token: row.release_token,
+    tokenExpiresAt: row.token_expires_at,
+    issuedAt: issued,
+    hospitalId: row.hospital_id ?? '',
+    machineId: row.machine_id ?? '',
+  };
 }
 
 /** First claim: records survey + consents, decrements stock, returns a token. */

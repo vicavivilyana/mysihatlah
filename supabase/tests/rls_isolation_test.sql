@@ -12,7 +12,7 @@
 -- The suite runs against the live local DB, so every assertion keys on rows
 -- THIS test inserted (synthetic ids/phones/hashes), never on live data.
 begin;
-select plan(24);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.local'),
@@ -37,6 +37,15 @@ values ('00000000-0000-0000-0000-00000000000a', 'marketing', true),
        ('00000000-0000-0000-0000-00000000000b', 'marketing', true);
 insert into public.otp_codes (phone, code_hash, expires_at)
 values ('+60000000001', 'pgtap-seed-hash', now() + interval '5 min');
+
+-- Medications for A and B (health data — owner-scoped like everything else).
+insert into public.medications (id, user_id, name, dose, times, stock_left, refill_at) values
+  ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'enc-A-med', 'enc-500mg', '{08:00}', 3, 5),
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 'enc-B-med', 'enc-10mg', '{09:00}', 30, 5);
+insert into public.medication_doses (user_id, medication_id, due_date, due_time) values
+  ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-0000000000a1', current_date, '08:00'),
+  ('00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-0000000000b1', current_date, '09:00');
+
 
 -- Helper: the dispenser's atomic redeem, as one guarded UPDATE, returning the
 -- number of rows it claimed. (A data-modifying CTE cannot be used inside a
@@ -70,6 +79,9 @@ select is((select count(*)::int from public.appointments where clinic_name = 'B-
 select is((select count(*)::int from public.survey_responses), 1, 'A sees only own survey');
 select is((select count(*)::int from public.kit_claims), 1, 'A sees only own claim');
 select is((select count(*)::int from public.consents), 1, 'A sees only own consent');
+select is((select count(*)::int from public.medications), 1, 'A sees only own medication');
+select is((select count(*)::int from public.medications where name = 'enc-B-med'), 0, 'A cannot read B medication');
+select is((select count(*)::int from public.medication_doses), 1, 'A sees only own medication doses');
 
 -- ===========================================================================
 -- 2. authenticated: server-only tables + privileged RPC → 42501
@@ -80,6 +92,12 @@ select throws_ok('select count(*) from public.audit_log',
   '42501', 'permission denied for table audit_log', 'authenticated cannot select audit_log');
 select throws_ok($$insert into public.audit_log (action) values ('forged')$$,
   '42501', 'permission denied for table audit_log', 'authenticated cannot insert audit_log');
+select throws_ok(
+  $$select * from public.toggle_medication_dose(
+      '00000000-0000-0000-0000-00000000000a'::uuid,
+      '00000000-0000-0000-0000-0000000000a1'::uuid, current_date, '08:00', true)$$,
+  '42501', 'permission denied for function toggle_medication_dose',
+  'authenticated cannot execute toggle_medication_dose RPC');
 select throws_ok(
   $$select * from public.claim_welcome_kit(
       '00000000-0000-0000-0000-00000000000a'::uuid, 'PGTAP-M1', null, null, null, now(),

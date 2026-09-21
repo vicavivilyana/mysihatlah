@@ -184,7 +184,11 @@
     "termsLabel": "I agree to the Terms of Service and Privacy Policy.",
     "termsRequired": "You must agree to the Terms & Privacy Policy to continue.",
     "marketingLabel": "I would like to receive promotions and benefits.",
-    "submit": "Release my kit"
+    "submit": "Release my kit",
+    "questionOf": "Question {{n}} of {{total}}",
+    "continue": "Continue",
+    "consentTitle": "Before we release your kit",
+    "consentSub": "Please confirm the following."
   },
   "appointments": {
     "title": "Appointment reminders",
@@ -215,7 +219,9 @@
     "done": "Done",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "inDays": "{{count}} days"
+    "inDays": "{{count}} days",
+    "manual": "Enter details manually",
+    "manualTitle": "Add appointment"
   },
   "nearby": {
     "title": "Nearby food & deals",
@@ -261,6 +267,26 @@
   },
   "meds": {
     "title": "Medications",
-    "stubBody": "Your medication tracker is being built. It will let you add medicines, tick off daily doses and track adherence."
+    "stubBody": "Your medication tracker is being built. It will let you add medicines, tick off daily doses and track adherence.",
+    "addTitle": "Add medication",
+    "add": "Add medication",
+    "name": "Medicine name",
+    "dose": "Dose",
+    "note": "When to take it",
+    "notePlaceholder": "e.g. After breakfast",
+    "times": "Times each day",
+    "addTime": "Add time",
+    "stock": "Tablets in stock",
+    "refillAt": "Remind me to order at",
+    "todaySchedule": "Today's schedule",
+    "dosesToday": "{{taken}} / {{total}} doses today",
+    "consistency": "Great consistency this week 👏",
+    "keepGoing": "Keep going — tick each dose as you take it.",
+    "empty": "No medicines yet. Add one to start tracking doses and refills.",
+    "finished": "Finished — order more",
+    "needsRefill": "Running low — time to order",
+    "left": "{{n}} left",
+    "deleteConfirm": "Remove this medicine?",
+    "noDosesToday": "No doses scheduled today."
   }
 }

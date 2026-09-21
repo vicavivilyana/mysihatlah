@@ -184,7 +184,11 @@
     "termsLabel": "Saya bersetuju dengan Terma Perkhidmatan dan Dasar Privasi.",
     "termsRequired": "Anda mesti bersetuju dengan Terma & Dasar Privasi untuk meneruskan.",
     "marketingLabel": "Saya ingin menerima promosi dan faedah.",
-    "submit": "Keluarkan pek saya"
+    "submit": "Keluarkan pek saya",
+    "questionOf": "Soalan {{n}} daripada {{total}}",
+    "continue": "Teruskan",
+    "consentTitle": "Sebelum kami keluarkan pek anda",
+    "consentSub": "Sila sahkan perkara berikut."
   },
   "appointments": {
     "title": "Peringatan temu janji",
@@ -215,7 +219,9 @@
     "done": "Selesai",
     "today": "Hari ini",
     "tomorrow": "Esok",
-    "inDays": "{{count}} hari"
+    "inDays": "{{count}} hari",
+    "manual": "Masukkan butiran secara manual",
+    "manualTitle": "Tambah temu janji"
   },
   "nearby": {
     "title": "Makanan & tawaran berdekatan",
@@ -261,6 +267,26 @@
   },
   "meds": {
     "title": "Ubat",
-    "stubBody": "Penjejak ubat anda sedang dibina. Ia akan membolehkan anda menambah ubat, menanda dos harian dan menjejaki pematuhan."
+    "stubBody": "Penjejak ubat anda sedang dibina. Ia akan membolehkan anda menambah ubat, menanda dos harian dan menjejaki pematuhan.",
+    "addTitle": "Tambah ubat",
+    "add": "Tambah ubat",
+    "name": "Nama ubat",
+    "dose": "Dos",
+    "note": "Bila untuk diambil",
+    "notePlaceholder": "cth. Selepas sarapan",
+    "times": "Waktu setiap hari",
+    "addTime": "Tambah waktu",
+    "stock": "Bilangan pil dalam stok",
+    "refillAt": "Ingatkan saya untuk pesan pada",
+    "todaySchedule": "Jadual hari ini",
+    "dosesToday": "{{taken}} / {{total}} dos hari ini",
+    "consistency": "Konsisten yang hebat minggu ini 👏",
+    "keepGoing": "Teruskan — tandakan setiap dos yang diambil.",
+    "empty": "Belum ada ubat. Tambah satu untuk mula menjejaki dos dan isi semula.",
+    "finished": "Habis — pesan lagi",
+    "needsRefill": "Hampir habis — masa untuk pesan",
+    "left": "tinggal {{n}}",
+    "deleteConfirm": "Buang ubat ini?",
+    "noDosesToday": "Tiada dos dijadualkan hari ini."
   }
 }

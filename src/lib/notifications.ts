@@ -46,12 +46,11 @@ function saveStore(items: ScheduledReminder[]): void {
   }
 }
 
-/** Compute reminder fire times: 1 day before + 8am on the day. */
+/** Reminder fire times: 1 day before and 2 hours before the appointment. */
 export function computeReminderTimes(target: Date): number[] {
-  const dayBefore = new Date(target.getTime() - 24 * 60 * 60 * 1000).getTime();
-  const morning = new Date(target);
-  morning.setHours(8, 0, 0, 0);
-  return [dayBefore, morning.getTime()].filter((t) => t > Date.now());
+  const dayBefore = target.getTime() - 24 * 60 * 60 * 1000;
+  const twoHoursBefore = target.getTime() - 2 * 60 * 60 * 1000;
+  return [dayBefore, twoHoursBefore].filter((t) => t > Date.now());
 }
 
 export async function scheduleReminders(

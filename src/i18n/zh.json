@@ -184,7 +184,11 @@
     "termsLabel": "我同意服务条款和隐私政策。",
     "termsRequired": "必须同意服务条款和隐私政策才能继续。",
     "marketingLabel": "我愿意接收促销和优惠信息。",
-    "submit": "发放我的礼包"
+    "submit": "发放我的礼包",
+    "questionOf": "第 {{n}} 题，共 {{total}} 题",
+    "continue": "继续",
+    "consentTitle": "发放礼包前",
+    "consentSub": "请确认以下内容。"
   },
   "appointments": {
     "title": "复诊提醒",
@@ -215,7 +219,9 @@
     "done": "已完成",
     "today": "今天",
     "tomorrow": "明天",
-    "inDays": "{{count}} 天"
+    "inDays": "{{count}} 天",
+    "manual": "手动填写信息",
+    "manualTitle": "添加预约"
   },
   "nearby": {
     "title": "附近美食与优惠",
@@ -261,6 +267,26 @@
   },
   "meds": {
     "title": "用药管理",
-    "stubBody": "用药记录功能正在开发中，将支持添加药品、勾选每日用药并追踪服药依从性。"
+    "stubBody": "用药记录功能正在开发中，将支持添加药品、勾选每日用药并追踪服药依从性。",
+    "addTitle": "添加药品",
+    "add": "添加药品",
+    "name": "药品名称",
+    "dose": "剂量",
+    "note": "服用时间说明",
+    "notePlaceholder": "例如：早餐后",
+    "times": "每日服用时间",
+    "addTime": "添加时间",
+    "stock": "现有药量（片）",
+    "refillAt": "低于此数量时提醒我补药",
+    "todaySchedule": "今日用药",
+    "dosesToday": "今日已服 {{taken}} / {{total}} 次",
+    "consistency": "本周坚持得很好 👏",
+    "keepGoing": "继续保持 — 每次服药后请勾选。",
+    "empty": "还没有药品。添加一个即可开始记录服药与补药。",
+    "finished": "已用完 — 请补药",
+    "needsRefill": "药量不足 — 该补药了",
+    "left": "剩 {{n}}",
+    "deleteConfirm": "移除此药品？",
+    "noDosesToday": "今天没有安排服药。"
   }
 }

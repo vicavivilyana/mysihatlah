@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_QR_PAYLOAD_MODE?: 'json' | 'token' | 'url';
   readonly VITE_QR_URL_BASE?: string;
   readonly VITE_DEFAULT_MACHINE_ID?: string;
+  readonly VITE_DEV_AUTOLOGIN?: string;
 }
 
 interface ImportMeta {

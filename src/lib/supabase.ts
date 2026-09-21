@@ -78,6 +78,12 @@ export async function invokeFunction<T = unknown>(
       } catch {
         /* non-JSON body */
       }
+      // A 401 means the JWT is no longer valid for a real user (expired, or
+      // the account was deleted server-side). Drop the dead session so the app
+      // can re-authenticate instead of showing "session expired" forever.
+      if (status === 401 || reason === 'unauthorized') {
+        void supabase.auth.signOut();
+      }
       // message === reason so callers can match either.
       throw new FunctionError(reason, 'http', reason, status);
     }

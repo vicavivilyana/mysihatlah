@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Camera, Images, Loader2 } from 'lucide-react';
+import { Camera, Images, Loader2, PencilLine } from 'lucide-react';
 import { getOcrProvider, parseAppointment, type ParsedAppointment } from '@/providers/ocr';
 import { saveAppointment, type Appointment } from './api';
 import { scheduleReminders } from '@/lib/notifications';
@@ -108,6 +108,13 @@ export default function AddAppointment({
           <button className="btn-ghost flex items-center justify-center gap-2" onClick={() => galleryRef.current?.click()}>
             <Images size={18} /> {t('appointments.chooseImage')}
           </button>
+          {/* Manual path — same review-before-save screen, just nothing pre-filled. */}
+          <button
+            className="btn-ghost flex items-center justify-center gap-2"
+            onClick={() => { setOcrOk(null); setPhase('review'); }}
+          >
+            <PencilLine size={18} /> {t('appointments.manual')}
+          </button>
           <button className="w-full py-2 text-sm text-ink-muted" onClick={onCancel}>{t('common.cancel')}</button>
         </div>
       )}
@@ -124,9 +131,11 @@ export default function AddAppointment({
 
       {phase === 'review' && (
         <div className="space-y-4">
-          <p className={`rounded-2xl px-4 py-2 text-sm font-medium ${ocrOk ? 'bg-navy/5 text-navy' : 'bg-red-wash text-red'}`}>
-            {ocrOk ? t('appointments.ocrDone') : t('appointments.ocrFailed')}
-          </p>
+          {ocrOk !== null && (
+            <p className={`rounded-2xl px-4 py-2 text-sm font-medium ${ocrOk ? 'bg-navy/5 text-navy' : 'bg-red-wash text-red'}`}>
+              {ocrOk ? t('appointments.ocrDone') : t('appointments.ocrFailed')}
+            </p>
+          )}
 
           {preview && <img src={preview} alt="card" className="max-h-40 w-full rounded-card object-cover" />}
 

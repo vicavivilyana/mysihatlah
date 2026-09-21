@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { Package, TimerReset, ScanLine } from 'lucide-react';
 import { buildQrPayload } from './qrPayload';
-import type { ClaimKitResult } from './api';
+import type { ReleaseView } from './api';
 
 const KIT_ITEMS = ['mask', 'wetTissue', 'dryTissue', 'sanitizer', 'powerBank'] as const;
 
@@ -24,14 +24,14 @@ export default function ReleaseQr({
   regenerating,
   error,
 }: {
-  claim: ClaimKitResult;
+  claim: ReleaseView;
   onDone: () => void;
   onRegenerate: () => void;
   regenerating: boolean;
   error: string | null;
 }) {
   const { t } = useTranslation();
-  const expiresAt = useMemo(() => new Date(claim.token_expires_at).getTime(), [claim.token_expires_at]);
+  const expiresAt = useMemo(() => new Date(claim.tokenExpiresAt).getTime(), [claim.tokenExpiresAt]);
   const [remaining, setRemaining] = useState(() => expiresAt - Date.now());
 
   useEffect(() => {
@@ -45,10 +45,10 @@ export default function ReleaseQr({
   const payload = useMemo(
     () =>
       buildQrPayload({
-        token: claim.release_token,
-        hospitalId: claim.machine.hospital_id,
-        machineId: claim.machine.machine_id,
-        issuedAt: claim.issued_at,
+        token: claim.token,
+        hospitalId: claim.hospitalId,
+        machineId: claim.machineId,
+        issuedAt: claim.issuedAt,
       }),
     [claim],
   );
@@ -105,11 +105,9 @@ export default function ReleaseQr({
         </ul>
       </div>
 
-      {claim.machine.machine_id && (
+      {claim.machineId && (
         <p className="mt-4 text-xs text-ink-muted">
-          {[claim.machine.hospital_name, claim.machine.location_name, claim.machine.machine_id]
-            .filter(Boolean)
-            .join(' · ')}
+          {[claim.hospitalName, claim.locationName, claim.machineId].filter(Boolean).join(' · ')}
         </p>
       )}
 
