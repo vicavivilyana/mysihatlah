@@ -36,14 +36,39 @@ export interface MachineDispenseProvider {
 }
 
 /**
- * The only provider that exists right now. It deliberately throws: if it ever
- * ends up on a call path, that is a bug, not a silent no-op.
+ * The provider in force today: the machine dispenses by SCANNING our QR, so
+ * there is nothing for us to call. It is a deliberate no-op that records the
+ * fact rather than pretending an API exists.
+ */
+export class ManualScanDispenseProvider implements MachineDispenseProvider {
+  readonly name = 'manual-scan';
+  dispense(req: DispenseRequest): Promise<DispenseResult> {
+    console.log(
+      `[dispense/manual-scan] no vendor call — machine ${req.machineId} dispenses by scanning the QR (claim ${req.claimId})`,
+    );
+    return Promise.resolve({ ok: true });
+  }
+}
+
+/**
+ * Use this while a vendor API is being written, so a half-wired integration
+ * fails loudly instead of silently doing nothing.
  */
 export class NotImplementedMachineDispenseProvider implements MachineDispenseProvider {
   readonly name = 'not-implemented';
   dispense(_req: DispenseRequest): Promise<DispenseResult> {
     throw new Error(
-      'machine_dispense_not_implemented: the machine dispenses by scanning the QR shown on the phone; there is no vendor API in this build.',
+      'machine_dispense_not_implemented: no vendor API in this build.',
     );
   }
+}
+
+/**
+ * MACHINE_DISPENSE_PROVIDER: "manual-scan" (default) today.
+ * When the vendor supplies their spec, add a VendorApiDispenseProvider here and
+ * call it from dispenser-release AFTER the atomic redeem succeeds, so a failed
+ * vendor call can be retried without ever releasing two kits.
+ */
+export function getMachineDispenseProvider(): MachineDispenseProvider {
+  return new ManualScanDispenseProvider();
 }

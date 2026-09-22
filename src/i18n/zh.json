@@ -39,7 +39,13 @@
     "already_used": "此发放码已被使用。",
     "forbidden_path": "该图片无法关联到您的账户。",
     "method_not_allowed": "不允许的请求。",
-    "no_claim": "未找到您的礼包预约，请重新领取。"
+    "no_claim": "未找到您的礼包预约，请重新领取。",
+    "payment_required": "请先支付押金再领取礼包。",
+    "payment_failed": "押金支付未成功，请重试。",
+    "already_finalized": "您的押金已支付。",
+    "no_deposit": "未找到可退还的押金。",
+    "not_dispensed": "请先领取礼包，再归还充电宝。",
+    "refund_failed": "退款处理失败，请重试。"
   },
   "demo": {
     "badge": "演示",
@@ -291,5 +297,24 @@
   },
   "preview": {
     "banner": "预览模式 — 未登录"
+  },
+  "deposit": {
+    "title": "RM20 押金",
+    "subtitle": "礼包中的充电宝需支付可退还押金。",
+    "amountLabel": "可退还押金",
+    "refundable": "归还充电宝后全额退还",
+    "explainer": "将充电宝归还至任意 MySihatLah 回收箱，RM20 押金将自动退还。礼包中的其他物品归您所有。",
+    "mockNotice": "演示支付 — 不会扣款，也不会连接任何支付网关。真实的 Fiuu 支付尚未接入。",
+    "payMock": "支付 {{amount}}（演示）",
+    "processing": "处理中…",
+    "paid": "押金已支付",
+    "statusPaid": "已暂扣 RM20 押金",
+    "statusRefunded": "RM20 押金已退还",
+    "returnTitle": "充电宝",
+    "returnBody": "已归还充电宝？请在下方确认，押金将退还给您。",
+    "returnCta": "归还充电宝（演示）",
+    "returning": "退款处理中…",
+    "refundedAt": "已于 {{when}} 退还",
+    "returnMockNotice": "仅为演示 — 实际由回收箱通过 RFID 确认归还。"
   }
 }

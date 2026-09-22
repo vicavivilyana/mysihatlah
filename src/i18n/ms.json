@@ -39,7 +39,13 @@
     "already_used": "Kod pelepasan ini telah digunakan.",
     "forbidden_path": "Imej itu tidak boleh dilampirkan pada akaun anda.",
     "method_not_allowed": "Permintaan tidak dibenarkan.",
-    "no_claim": "Kami tidak menemui tempahan pek anda. Sila mulakan tuntutan baharu."
+    "no_claim": "Kami tidak menemui tempahan pek anda. Sila mulakan tuntutan baharu.",
+    "payment_required": "Sila bayar deposit sebelum mengambil pek anda.",
+    "payment_failed": "Pembayaran deposit tidak berjaya. Sila cuba lagi.",
+    "already_finalized": "Deposit anda telah pun dibayar.",
+    "no_deposit": "Tiada deposit ditemui untuk dikembalikan.",
+    "not_dispensed": "Ambil pek anda sebelum memulangkan bank kuasa.",
+    "refund_failed": "Bayaran balik tidak dapat diproses. Sila cuba lagi."
   },
   "demo": {
     "badge": "Demo",
@@ -291,5 +297,24 @@
   },
   "preview": {
     "banner": "Pratonton — belum log masuk"
+  },
+  "deposit": {
+    "title": "Deposit RM20",
+    "subtitle": "Deposit boleh dikembalikan bagi bank kuasa dalam pek anda.",
+    "amountLabel": "Deposit boleh dikembalikan",
+    "refundable": "Dikembalikan sepenuhnya apabila bank kuasa dipulangkan",
+    "explainer": "Pulangkan bank kuasa ke mana-mana peti MySihatLah dan RM20 anda dikembalikan secara automatik. Barang lain dalam pek adalah milik anda.",
+    "mockNotice": "Pembayaran demo — tiada wang dicaj dan tiada gerbang pembayaran dihubungi. Pembayaran Fiuu sebenar belum disambungkan.",
+    "payMock": "Bayar {{amount}} (demo)",
+    "processing": "Memproses…",
+    "paid": "Deposit dibayar",
+    "statusPaid": "Deposit RM20 dipegang",
+    "statusRefunded": "Deposit RM20 dikembalikan",
+    "returnTitle": "Bank kuasa",
+    "returnBody": "Sudah pulangkan bank kuasa anda? Sahkan di bawah dan deposit anda dikembalikan.",
+    "returnCta": "Pulangkan bank kuasa (demo)",
+    "returning": "Memproses bayaran balik…",
+    "refundedAt": "Dikembalikan {{when}}",
+    "returnMockNotice": "Demo sahaja — peti sebenar mengesahkan pemulangan melalui RFID."
   }
 }

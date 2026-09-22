@@ -39,7 +39,13 @@
     "already_used": "This release code has already been used.",
     "forbidden_path": "That image can't be attached to your account.",
     "method_not_allowed": "Request not allowed.",
-    "no_claim": "We couldn't find your kit reservation. Please start a new claim."
+    "no_claim": "We couldn't find your kit reservation. Please start a new claim.",
+    "payment_required": "Please pay the deposit before collecting your kit.",
+    "payment_failed": "The deposit payment did not go through. Please try again.",
+    "already_finalized": "Your deposit is already paid.",
+    "no_deposit": "No deposit found to refund.",
+    "not_dispensed": "Collect your kit before returning the power bank.",
+    "refund_failed": "The refund could not be processed. Please try again."
   },
   "demo": {
     "badge": "Demo",
@@ -291,5 +297,24 @@
   },
   "preview": {
     "banner": "Preview — not logged in"
+  },
+  "deposit": {
+    "title": "RM20 deposit",
+    "subtitle": "A refundable deposit covers the power bank in your kit.",
+    "amountLabel": "Refundable deposit",
+    "refundable": "Fully refunded on power bank return",
+    "explainer": "Return the power bank to any MySihatLah dropbox and your RM20 is refunded automatically. Everything else in the kit is yours to keep.",
+    "mockNotice": "Demo payment — no money is charged and no payment gateway is contacted. The real Fiuu checkout is not wired up yet.",
+    "payMock": "Pay {{amount}} (demo)",
+    "processing": "Processing…",
+    "paid": "Deposit paid",
+    "statusPaid": "RM20 deposit held",
+    "statusRefunded": "RM20 deposit refunded",
+    "returnTitle": "Power bank",
+    "returnBody": "Returned your power bank? Confirm below and your deposit is refunded.",
+    "returnCta": "Return power bank (demo)",
+    "returning": "Refunding…",
+    "refundedAt": "Refunded {{when}}",
+    "returnMockNotice": "Demo only — the real dropbox confirms the return by RFID."
   }
 }

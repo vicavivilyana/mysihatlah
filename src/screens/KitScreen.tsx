@@ -1,23 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { PartyPopper, Ban, Package } from 'lucide-react';
+import { PartyPopper, Ban, Package, BatteryCharging, CheckCircle2, FlaskConical } from 'lucide-react';
 import ScreenHeader from '@/components/ScreenHeader';
 import SurveyForm from '@/features/kit/SurveyForm';
 import ReleaseQr from '@/features/kit/ReleaseQr';
 import {
-  claimKit,
+  createPendingClaim,
+  finalizeClaim,
   getClaimStatus,
   getMyClaim,
+  getMyDeposit,
+  returnPowerBank,
   reissueReleaseToken,
   viewFromClaimResult,
   viewFromRow,
+  type DepositRow,
+  type MachineInfo,
   type ReleaseView,
   type SurveyAnswers,
 } from '@/features/kit/api';
+import PaymentStep from '@/features/kit/PaymentStep';
 import { functionErrorKey, isReason } from '@/lib/supabase';
 
-type Step = 'checking' | 'survey' | 'qr' | 'claimed' | 'dispensed';
+type Step = 'checking' | 'survey' | 'payment' | 'qr' | 'claimed' | 'dispensed';
 
 const KIT_ITEMS = ['mask', 'wetTissue', 'dryTissue', 'sanitizer', 'powerBank'] as const;
 const POLL_MS = 3000;
@@ -35,6 +41,11 @@ export default function KitScreen() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('checking');
   const [claim, setClaim] = useState<ReleaseView | null>(null);
+  const [pending, setPending] = useState<
+    { claimId: string; amountCents: number; currency: string; machine: MachineInfo } | null
+  >(null);
+  const [deposit, setDeposit] = useState<DepositRow | null>(null);
+  const [refunding, setRefunding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,12 +57,28 @@ export default function KitScreen() {
     let active = true;
     (async () => {
       try {
-        const row = await getMyClaim();
+        const [row, dep] = await Promise.all([getMyClaim(), getMyDeposit().catch(() => null)]);
         if (!active) return;
+        setDeposit(dep);
         if (!row) {
           setStep('survey');
         } else if (row.status === 'released') {
           setStep('dispensed');
+        } else if (!dep || dep.status !== 'paid') {
+          // Claim reserved but the deposit was never paid (abandoned at
+          // payment). Resume at payment — the claim is not burned.
+          setPending({
+            claimId: '',
+            amountCents: 2000,
+            currency: 'MYR',
+            machine: {
+              machine_id: row.machine_id ?? '',
+              location_name: '',
+              hospital_id: row.hospital_id ?? '',
+              hospital_name: '',
+            },
+          });
+          setStep('payment');
         } else {
           // Kit allocated but not dispensed. Re-display the EXISTING token if it
           // is still valid — opening this tab must not rotate the token (that
@@ -103,9 +130,14 @@ export default function KitScreen() {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await claimKit(answers);
-      setClaim(viewFromClaimResult(res));
-      setStep('qr');
+      const res = await createPendingClaim(answers);
+      setPending({
+        claimId: res.claim_id,
+        amountCents: res.deposit.amount_cents,
+        currency: res.deposit.currency,
+        machine: res.machine,
+      });
+      setStep('payment');
     } catch (e) {
       if (isReason(e, 'already_claimed')) setStep('dispensed');
       else setError(t(functionErrorKey(e)));
@@ -113,6 +145,44 @@ export default function KitScreen() {
       setSubmitting(false);
     }
   }
+
+  const handlePaid = useCallback(
+    async (paymentRef?: string) => {
+      setError(null);
+      try {
+        const res = await finalizeClaim(pending?.claimId ?? '', paymentRef);
+        setClaim(viewFromClaimResult(res));
+        setDeposit(await getMyDeposit().catch(() => null));
+        setStep('qr');
+      } catch (e) {
+        if (isReason(e, 'already_claimed')) setStep('dispensed');
+        else if (isReason(e, 'already_finalized')) {
+          // Deposit already taken — just refresh the QR.
+          try {
+            const res = await reissueReleaseToken();
+            setClaim(viewFromClaimResult(res));
+            setStep('qr');
+          } catch {
+            setError(t('errors.server_error'));
+          }
+        } else setError(t(functionErrorKey(e)));
+      }
+    },
+    [pending, t],
+  );
+
+  const handleReturn = useCallback(async () => {
+    setRefunding(true);
+    setError(null);
+    try {
+      await returnPowerBank();
+      setDeposit(await getMyDeposit().catch(() => null));
+    } catch (e) {
+      setError(t(functionErrorKey(e)));
+    } finally {
+      setRefunding(false);
+    }
+  }, [t]);
 
   const handleRegenerate = useCallback(async () => {
     setError(null);
@@ -142,6 +212,17 @@ export default function KitScreen() {
           {error && <p className="px-5 pt-4 text-sm font-semibold text-red">{error}</p>}
           <SurveyForm onSubmit={handleSurvey} submitting={submitting} />
         </>
+      )}
+
+      {step === 'payment' && pending && (
+        <PaymentStep
+          claimId={pending.claimId}
+          amountCents={pending.amountCents}
+          currency={pending.currency}
+          onPaid={handlePaid}
+          onCancel={() => navigate('/')}
+          error={error}
+        />
       )}
 
       {step === 'qr' && claim && (
@@ -186,6 +267,41 @@ export default function KitScreen() {
               ))}
             </ul>
           </div>
+
+          {/* Power bank return -> deposit refund */}
+          {deposit && (
+            <div className="card mt-4 w-full text-left">
+              <p className="mb-1 flex items-center gap-2 font-semibold text-ink">
+                <BatteryCharging size={18} className="text-navy" /> {t('deposit.returnTitle')}
+              </p>
+
+              {deposit.status === 'refunded' ? (
+                <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-success">
+                  <CheckCircle2 size={16} />
+                  {t('deposit.statusRefunded')}
+                  {deposit.refunded_at && (
+                    <span className="font-normal text-ink-muted">
+                      · {t('deposit.refundedAt', { when: new Date(deposit.refunded_at).toLocaleString() })}
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <>
+                  <p className="chip-gold mt-2">{t('deposit.statusPaid')}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-ink-muted">{t('deposit.returnBody')}</p>
+                  <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-ink-muted">
+                    <FlaskConical size={13} className="mt-0.5 shrink-0 text-gold" />
+                    {t('deposit.returnMockNotice')}
+                  </p>
+                  <button className="btn-ghost mt-4" disabled={refunding} onClick={handleReturn}>
+                    {refunding ? t('deposit.returning') : t('deposit.returnCta')}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {error && <p className="mt-4 text-sm font-semibold text-red">{error}</p>}
 
           <button className="btn-primary mt-8" onClick={() => navigate('/')}>{t('nav.home')}</button>
         </div>

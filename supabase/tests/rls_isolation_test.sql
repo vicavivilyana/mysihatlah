@@ -138,35 +138,46 @@ select lives_ok(
   'service_role can insert audit_log');
 
 -- ===========================================================================
--- 5. claim_welcome_kit as service_role (user C on PGTAP-M1, stock 1)
+-- 5. Two-stage claim (0007): pending -> deposit -> finalize -> release.
+--    claim_welcome_kit from 0004 is superseded; its service_role EXECUTE was
+--    revoked in 0007 precisely so no pre-deposit path can issue a token.
 -- ===========================================================================
 select lives_ok(
-  $$select * from public.claim_welcome_kit(
-      '00000000-0000-0000-0000-00000000000c'::uuid, 'PGTAP-M1', null, null, null, now(),
-      'self', '20to30', 'enc-q3', 'enc-q4', null, true, '2025-01', 'pgtap-token-c', now() + interval '5 min')$$,
-  'service_role can claim via RPC');
+  $$select * from public.create_pending_claim(
+      '00000000-0000-0000-0000-00000000000c'::uuid, 'PGTAP-M1', null, null, now(),
+      'self', '20to30', 'enc-q3', 'enc-q4', null, true, '2025-01')$$,
+  'stage A: service_role can create a pending claim');
+
 select is(
-  (select status from public.kit_claims where user_id = '00000000-0000-0000-0000-00000000000c'), 'pending',
-  'claim starts as pending (released only by the dispenser)');
+  (select status || '/' || coalesce(release_token, 'NULL') || '/' ||
+          (select stock_count from public.machines m where m.machine_id = 'PGTAP-M1')::text
+     from public.kit_claims where user_id = '00000000-0000-0000-0000-00000000000c'),
+  'pending/NULL/1',
+  'stage A issues NO token and takes NO stock');
+
 select is(
   (select count(*)::int from public.consents where user_id = '00000000-0000-0000-0000-00000000000c'), 2,
-  'terms + marketing consents written inside the claim transaction');
+  'stage A records terms + marketing consents');
+
+select lives_ok(
+  $$select * from public.finalize_kit_claim(
+      '00000000-0000-0000-0000-00000000000c'::uuid, 'pgtap-token-c',
+      now() + interval '60 seconds', 'mock', 2000, 'pgtap-ref')$$,
+  'stage B: finalize issues the token and records the deposit');
+
 select is(
-  (select stock_count from public.machines where machines.machine_id = 'PGTAP-M1'), 0,
-  'stock decremented to 0');
+  (select (select stock_count from public.machines m where m.machine_id = 'PGTAP-M1')::text || '/' ||
+          (select status from public.deposits d where d.user_id = '00000000-0000-0000-0000-00000000000c')),
+  '0/paid',
+  'stage B decrements stock exactly once and records a paid deposit');
+
 select throws_ok(
-  $$select * from public.claim_welcome_kit(
-      '00000000-0000-0000-0000-00000000000c'::uuid, 'PGTAP-M1', null, null, null, now(),
-      'self', '20to30', 'x', 'x', null, false, '2025-01', 'pgtap-token-c2', now() + interval '5 min')$$,
-  'P0003', 'already_claimed', 'second claim by the same user raises already_claimed');
-select throws_ok(
-  $$select * from public.claim_welcome_kit(
-      '00000000-0000-0000-0000-00000000000d'::uuid, 'PGTAP-M1', null, null, null, now(),
-      'self', '20to30', 'x', 'x', null, false, '2025-01', 'pgtap-token-d', now() + interval '5 min')$$,
-  'P0002', 'out_of_stock', 'claim on an empty machine raises out_of_stock (stock never goes below 0)');
+  $$select * from public.finalize_kit_claim(
+      '00000000-0000-0000-0000-00000000000c'::uuid, 'tok2', now() + interval '60 seconds', 'mock', 2000, 'ref2')$$,
+  'P0007', 'already_finalized', 'paying twice for the same claim is refused');
 
 -- One-time atomic release: the guarded UPDATE succeeds exactly once.
-select is(pg_temp.redeem('pgtap-token-c'), 1, 'guarded release UPDATE redeems a pending token once');
+select is(pg_temp.redeem('pgtap-token-c'), 1, 'guarded release UPDATE redeems a paid token once');
 select is(pg_temp.redeem('pgtap-token-c'), 0, 'the same token cannot be redeemed twice');
 
 reset role;

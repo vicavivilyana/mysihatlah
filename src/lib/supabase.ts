@@ -112,6 +112,12 @@ export const KNOWN_REASONS = [
   'already_used',
   'forbidden_path',
   'no_claim',
+  'refund_failed',
+  'not_dispensed',
+  'no_deposit',
+  'already_finalized',
+  'payment_failed',
+  'payment_required',
   'method_not_allowed',
   'server_error',
 ] as const;

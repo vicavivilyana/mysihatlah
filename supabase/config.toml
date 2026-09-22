@@ -46,3 +46,6 @@ verify_jwt = false
 # app-config is public posture only (no secrets) and must render before login.
 [functions.app-config]
 verify_jwt = false
+# admin-export-surveys authenticates with ADMIN_EXPORT_SECRET, not a user JWT.
+[functions.admin-export-surveys]
+verify_jwt = false

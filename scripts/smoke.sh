@@ -88,13 +88,27 @@ ok "400 invalid_code"
 step "3. claim-kit HG-TEST-000 (user1)"
 SURVEY='{"q1_for_whom":"self","q2_age":"20to30","q3_department":"cardiology","q4_need":"food","terms_accepted":true,"marketing_opt_in":true}'
 req POST "$FN/claim-kit" "{\"machine_id\":\"HG-TEST-000\",\"location\":\"Lobby\",\"scanned_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"survey\":$SURVEY}" "${AUTH1[@]}"
-[[ "$STATUS" == 200 && "$(j 'd["ok"]')" == "True" ]] || die "claim-kit expected 200 ok"
-TOKEN=$(j 'd.get("release_token")'); [[ -n "$TOKEN" ]] || die "no release_token"
-[[ "$(j 'd["machine"]["machine_id"]')" == "HG-TEST-000" ]] || die "machine_id mismatch"
-ok "release token issued for HG-TEST-000"
+[[ "$STATUS" == 200 && "$(j 'd["stage"]')" == "pending" ]] || die "stage A expected 200 pending"
+[[ -z "$(j 'd.get(\"release_token\")')" ]] || die "stage A must NOT issue a token"
+STOCK_A=$(dbq "select stock_count as n from public.machines where machine_id='HG-TEST-000'" "d['rows'][0]['n']")
+ok "pending claim, no token, stock untouched ($STOCK_A)"
 
-step "3b. re-issue: new QR for the SAME undispensed claim (never a 2nd kit)"
-STOCK_AFTER_CLAIM=$(dbq "select stock_count as n from public.machines where machine_id='HG-TEST-000'" "d['rows'][0]['n']")
+step "3a. QR before paying the deposit → refused"
+req POST "$FN/claim-kit" '{"reissue":true}' "${AUTH1[@]}"
+[[ "$STATUS" == 402 && "$(j 'd["reason"]')" == "payment_required" ]] || die "expected 402 payment_required, got $STATUS"
+ok "402 payment_required"
+
+step "3b. mock deposit → finalize → 60s QR token"
+req POST "$FN/finalize-claim" '{"payment_ref":"smoke"}' "${AUTH1[@]}"
+[[ "$STATUS" == 200 && "$(j 'd["stage"]')" == "finalized" ]] || die "finalize expected 200 finalized"
+TOKEN=$(j 'd.get("release_token")'); [[ -n "$TOKEN" ]] || die "no release_token after finalize"
+[[ "$(j 'd["deposit"]["status"]')" == "paid" ]] || die "deposit not recorded as paid"
+STOCK_B=$(dbq "select stock_count as n from public.machines where machine_id='HG-TEST-000'" "d['rows'][0]['n']")
+[[ "$STOCK_B" == "$((STOCK_A - 1))" ]] || die "stock should drop exactly 1 at finalize ($STOCK_A -> $STOCK_B)"
+ok "deposit paid, token issued, stock $STOCK_A → $STOCK_B"
+
+step "3c. re-issue: new QR for the SAME undispensed claim (never a 2nd kit)"
+STOCK_AFTER_CLAIM="$STOCK_B"
 req POST "$FN/claim-kit" '{"reissue":true}' "${AUTH1[@]}"
 [[ "$STATUS" == 200 ]] || die "reissue expected 200"
 [[ "$(j 'd["reissued"]')" == "True" ]] || die "reissue should report reissued=true"
@@ -128,6 +142,24 @@ step "5c. re-issue after dispensing → refused"
 req POST "$FN/claim-kit" '{"reissue":true}' "${AUTH1[@]}"
 [[ "$STATUS" == 409 && "$(j 'd["reason"]')" == "already_claimed" ]] || die "reissue after release must be 409 already_claimed, got $STATUS"
 ok "409 already_claimed"
+
+step "5d. return power bank (mock) → deposit refunded + audited"
+req POST "$FN/return-powerbank" '{}' "${AUTH1[@]}"
+[[ "$STATUS" == 200 && "$(j 'd["deposit"]["status"]')" == "refunded" ]] || die "refund expected 200 refunded"
+REF=$(dbq "select status as s from public.deposits where user_id='$UID1'" "d['rows'][0]['s']")
+[[ "$REF" == "refunded" ]] || die "deposit row not refunded"
+AUD=$(dbq "select count(*) as n from public.audit_log where actor_id='$UID1' and action='deposit_refunded'" "d['rows'][0]['n']")
+[[ "$AUD" == "1" ]] || die "deposit_refunded not audited"
+ok "RM20 refunded (mock), audit_log written"
+
+step "5e. admin CSV export: secret required, normal user denied"
+ADMIN_SECRET=$(envget supabase/functions/.env ADMIN_EXPORT_SECRET)
+CSV_STATUS=$(curl -s -o "$TMP/csv" -w '%{http_code}' -X POST "$FN/admin-export-surveys" -H "x-admin-secret: $ADMIN_SECRET" -H "x-admin-label: smoke")
+[[ "$CSV_STATUS" == 200 ]] || die "admin export expected 200, got $CSV_STATUS"
+head -1 "$TMP/csv" | grep -q "survey_id,created_at" || die "CSV header missing"
+req POST "$FN/admin-export-surveys" '{}' "${AUTH1[@]}"
+[[ "$STATUS" == 401 ]] || die "a normal authenticated user must NOT reach the admin export (got $STATUS)"
+ok "CSV returned for admin; authenticated user → 401"
 
 step "6. second claim-kit (user1) → already_claimed"
 req POST "$FN/claim-kit" "{\"machine_id\":\"HG-TEST-000\",\"survey\":$SURVEY}" "${AUTH1[@]}"

@@ -10,19 +10,46 @@ export interface SurveyAnswers {
   marketing_opt_in: boolean; // optional
 }
 
+export interface MachineInfo {
+  machine_id: string;
+  location_name: string;
+  hospital_id: string;
+  hospital_name: string;
+}
+
+/** Stage A — claim reserved, awaiting the deposit. No token yet. */
+export interface PendingClaimResult {
+  ok: true;
+  stage: 'pending';
+  resumed: boolean;
+  claim_id: string;
+  deposit: { amount_cents: number; currency: string };
+  machine: MachineInfo;
+}
+
+/** Stage B — deposit paid, one-time 60s QR token issued. */
 export interface ClaimKitResult {
   ok: true;
-  /** true when this token re-displays an existing, undispensed claim. */
-  reissued: boolean;
+  stage: 'finalized';
+  reissued?: boolean;
   release_token: string;
   token_expires_at: string;
   issued_at: string;
-  machine: {
-    machine_id: string;
-    location_name: string;
-    hospital_id: string;
-    hospital_name: string;
-  };
+  deposit?: { id?: string; amount_cents: number; currency: string; status: string; provider: string };
+  machine: MachineInfo;
+}
+
+export type DepositStatus = 'none' | 'paid' | 'refunded' | 'failed';
+
+export interface DepositRow {
+  id: string;
+  amount_cents: number;
+  currency: string;
+  status: Exclude<DepositStatus, 'none'>;
+  provider: string;
+  refund_method: string | null;
+  paid_at: string | null;
+  refunded_at: string | null;
 }
 
 export type ClaimStatus = 'none' | 'pending' | 'released' | 'expired';
@@ -75,7 +102,7 @@ export interface ReleaseView {
   locationName?: string;
 }
 
-export const TOKEN_TTL_MS = 5 * 60 * 1000; // matches claim-kit's TOKEN_TTL_SECONDS
+export const TOKEN_TTL_MS = 60 * 1000; // matches RELEASE_TOKEN_TTL_SECONDS
 
 export function viewFromClaimResult(r: ClaimKitResult): ReleaseView {
   return {
@@ -102,19 +129,48 @@ export function viewFromRow(row: KitClaimRow): ReleaseView | null {
   };
 }
 
-/** First claim: records survey + consents, decrements stock, returns a token. */
-export async function claimKit(survey: SurveyAnswers): Promise<ClaimKitResult> {
-  return invokeFunction<ClaimKitResult>('claim-kit', {
+/**
+ * STAGE A — survey submit. Records survey + consents and reserves the claim as
+ * PENDING. No stock is taken and no QR is issued until the deposit is paid, so
+ * abandoning at payment is free and resumable.
+ */
+export async function createPendingClaim(survey: SurveyAnswers): Promise<PendingClaimResult> {
+  return invokeFunction<PendingClaimResult>('claim-kit', {
     machine_id: DEFAULT_MACHINE_ID,
     scanned_at: new Date().toISOString(),
     survey,
   });
 }
 
+/** STAGE B — deposit paid; issues the one-time 60s release token. */
+export async function finalizeClaim(claimId: string, paymentRef?: string): Promise<ClaimKitResult> {
+  return invokeFunction<ClaimKitResult>('finalize-claim', {
+    claim_id: claimId,
+    payment_ref: paymentRef,
+  });
+}
+
+/** Read the caller's deposit (RLS: own row only). */
+export async function getMyDeposit(): Promise<DepositRow | null> {
+  const { data, error } = await supabase
+    .from('deposits')
+    .select('id, amount_cents, currency, status, provider, refund_method, paid_at, refunded_at')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as DepositRow) ?? null;
+}
+
+/** MOCK power-bank return → deposit refund. Demo path; see return-powerbank. */
+export async function returnPowerBank(): Promise<{ ok: true; deposit: DepositRow & { method: string } }> {
+  return invokeFunction('return-powerbank', {});
+}
+
 /**
- * Fresh token for an existing, UNDISPENSED claim (code expired, app reopened).
- * Server-side this can never create a second claim or move stock; once the kit
- * is physically released it responds already_claimed.
+ * Fresh token for an existing, PAID and undispensed claim (code expired, app
+ * reopened). Never creates a second claim, never moves stock, and the server
+ * refuses with `payment_required` if the deposit has not been paid.
  */
 export async function reissueReleaseToken(): Promise<ClaimKitResult> {
   return invokeFunction<ClaimKitResult>('claim-kit', { reissue: true });
